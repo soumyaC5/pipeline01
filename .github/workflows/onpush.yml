@@ -1,0 +1,110 @@
+name: CI pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - 'v*' # this tag type is used for release pipelines
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+
+    env:
+      DATABRICKS_HOST: ${{ secrets.DB_HOST }}
+      DATABRICKS_TOKEN:  ${{ secrets.DB_TOKEN }}
+      AWS_ACCESS_KEY: ${{ secrets.C5I_ACCESS_KEY }}
+      AWS_SECRET_KEY: ${{ secrets.C5I_SECRET_KEY }}
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+          cache: 'pip' # caching pip dependencie
+          cache-dependency-path: setup.py
+
+      - name: Install pip
+        run: |
+          python -m pip install --upgrade pip
+      
+      - name: Install wheel
+        run: |
+          python -m pip install wheel setuptools pip --upgrade
+
+      - name: Install dependencies and project in dev mode
+        run: | 
+          pip install -e ".[local,test]"
+
+
+      - name: Workflow deployment (assets only upload)
+        run: |
+          dbx deploy Data-preprocessing --assets-only
+
+      - name: Run the workflow in a jobless fashion
+        run: |
+          dbx launch Data-preprocessing --from-assets --trace
+      
+      - name: Workflow deployment (assets only upload)
+        run: |
+          dbx deploy Model-Training --assets-only
+
+      - name: Run the workflow in a jobless fashion
+        run: |
+          dbx launch Model-Training --from-assets --trace
+      
+      - name: Workflow deployment (assets only upload)
+        run: |
+          dbx deploy Model-Inferencing --assets-only
+
+      - name: Run the workflow in a jobless fashion
+        run: |
+          dbx launch Model-Inferencing --from-assets --trace
+      
+      
+      
+  
+  
+  # job2:
+  #   needs: job1
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     max-parallel: 4
+
+  #   env:
+  #     DATABRICKS_HOST: ${{ secrets.DB_HOST }}
+  #     DATABRICKS_TOKEN:  ${{ secrets.DB_TOKEN }}
+
+  #   steps:
+  #     - uses: actions/checkout@v1
+
+  #     - name: Set up Python 3.9
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.9'
+  #         cache: 'pip' # caching pip dependencie
+  #         cache-dependency-path: setup.py
+
+  #     - name: Install pip
+  #       run: |
+  #         python -m pip install --upgrade pip
+
+  #     - name: Install dependencies and project in dev mode
+  #       run: |
+  #         pip install -e ".[local,test]"
+
+      
+  #     - name: Workflow deployment (assets only upload)
+  #       run: |
+  #         dbx deploy testing-sample-task --assets-only
+      
+  #     - name: Run the workflow in a jobless fashion
+  #       run: |
+  #         dbx launch testing-sample-task --from-assets --trace
+
+

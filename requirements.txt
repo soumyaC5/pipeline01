@@ -1,0 +1,15 @@
+pyspark
+boto3
+delta-spark
+scikit-learn
+databricks-sdk
+databricks-feature-store
+evidently
+pandas
+mlflow
+urllib3
+pytest
+coverage[toml]
+pytest-cov
+dbx>=0.8
+pyyaml
